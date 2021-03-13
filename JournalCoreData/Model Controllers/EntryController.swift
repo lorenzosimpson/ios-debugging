@@ -176,7 +176,6 @@ class EntryController {
         let localFetchRequest: NSFetchRequest<Entry> = Entry.fetchRequest()
         let localEntries = try! context.fetch(fetchRequest)
         
-        
         context.performAndWait {
                 for entryRep in representations {
                     guard let id = entryRep.id else {
@@ -191,11 +190,9 @@ class EntryController {
                         _ = Entry(entryRepresentation: entryRep, context: context)
                     }
                 }
-            for localEntry in localEntries {
-                if outdatedEntries.contains(localEntry) {
+            for localEntry in outdatedEntries {
                     self.delete(entry: localEntry)
                 }
-            }
             saveToPersistentStore()
         }
     }
