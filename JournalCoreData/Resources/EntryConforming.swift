@@ -14,5 +14,5 @@ protocol EntryConforming {
     var bodyText: String? { get set }
     var mood: String? { get set }
     var timestamp: Date? { get set }
-    var identifier: String? { get set }
+    var id: String? { get set }
 }

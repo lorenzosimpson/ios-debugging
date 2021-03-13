@@ -8,19 +8,19 @@
 
 import Foundation
 
-struct EntryRepresentation: Decodable {
+struct EntryRepresentation: Codable {
     var title: String?
     var bodyText: String?
     var mood: String?
     var timestamp: Date?
-    var identifier: String?
+    var id: String?
 }
 
 func ==(lhs: EntryRepresentation, rhs: Entry) -> Bool {
     return rhs.title == lhs.title &&
         rhs.bodyText == lhs.bodyText &&
         rhs.mood == lhs.mood &&
-        rhs.identifier == lhs.identifier
+        rhs.id == lhs.id
 }
 
 func ==(lhs: Entry, rhs: EntryRepresentation) -> Bool {

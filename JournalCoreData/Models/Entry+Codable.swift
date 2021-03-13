@@ -17,7 +17,7 @@ extension Entry: Encodable {
         try container.encode(bodyText, forKey: .bodyText)
         try container.encode(mood, forKey: .mood)
         try container.encode(timestamp, forKey: .timestamp)
-        try container.encode(timestamp, forKey: .identifier)
+        try container.encode(id, forKey: .id)
     }
     
     enum CodingKeys: String, CodingKey {
@@ -25,7 +25,7 @@ extension Entry: Encodable {
         case bodyText
         case mood
         case timestamp
-        case identifier
+        case id
     }
     
 }

@@ -9,10 +9,13 @@
 import Foundation
 import CoreData
 
-#error("Change this value to your own firebase database! (and then delete this line)")
-let baseURL = URL(string: "https://journal-syncing.firebaseio.com/")!
+let baseURL = URL(string: "https://journal-277a4-default-rtdb.firebaseio.com/")!
 
 class EntryController {
+    
+    init() {
+        fetchEntriesFromServer()
+    }
     
     func createEntry(with title: String, bodyText: String, mood: String) {
         
@@ -44,8 +47,8 @@ class EntryController {
     
     private func put(entry: Entry, completion: @escaping ((Error?) -> Void) = { _ in }) {
         
-        let identifier = entry.identifier ?? UUID().uuidString
-        let requestURL = baseURL.appendingPathComponent(identifier).appendingPathComponent("json")
+        let id = entry.id ?? UUID().uuidString
+        let requestURL = baseURL.appendingPathComponent(id).appendingPathExtension("json")
         var request = URLRequest(url: requestURL)
         request.httpMethod = "PUT"
         
@@ -70,13 +73,13 @@ class EntryController {
     
     func deleteEntryFromServer(entry: Entry, completion: @escaping ((Error?) -> Void) = { _ in }) {
         
-        guard let identifier = entry.identifier else {
-            NSLog("Entry identifier is nil")
+        guard let id = entry.id else {
+            NSLog("Entry id is nil")
             completion(NSError())
             return
         }
         
-        let requestURL = baseURL.appendingPathComponent(identifier).appendingPathExtension("json")
+        let requestURL = baseURL.appendingPathComponent(id).appendingPathExtension("json")
         var request = URLRequest(url: requestURL)
         request.httpMethod = "DELETE"
         
@@ -112,6 +115,7 @@ class EntryController {
             let moc = CoreDataStack.shared.mainContext
             
             do {
+                print(data)
                 let entryReps = try JSONDecoder().decode([String: EntryRepresentation].self, from: data).map({$0.value})
                 self.updateEntries(with: entryReps, in: moc)
             } catch {
@@ -119,7 +123,7 @@ class EntryController {
                 completion(error)
                 return
             }
-            
+           
             moc.perform {
                 do {
                     try moc.save()
@@ -132,12 +136,14 @@ class EntryController {
         }.resume()
     }
     
-    private func fetchSingleEntryFromPersistentStore(with identifier: String?, in context: NSManagedObjectContext) -> Entry? {
+    private func fetchSingleEntryFromPersistentStore(with id: String?, in context: NSManagedObjectContext) -> Entry? {
         
-        guard let identifier = identifier else { return nil }
+        guard let id = id else {
+            return nil
+        }
         
         let fetchRequest: NSFetchRequest<Entry> = Entry.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "identfier == %@", identifier)
+        fetchRequest.predicate = NSPredicate(format: "id == %@", id)
         
         var result: Entry? = nil
         do {
@@ -151,15 +157,20 @@ class EntryController {
     private func updateEntries(with representations: [EntryRepresentation], in context: NSManagedObjectContext) {
         context.performAndWait {
             for entryRep in representations {
-                guard let identifier = entryRep.identifier else { continue }
+                print(entryRep)
+                guard let id = entryRep.id else {
+                    fatalError("Firebase entry does not have an id")
+                    continue
+                }
                 
-                let entry = self.fetchSingleEntryFromPersistentStore(with: identifier, in: context)
+                let entry = self.fetchSingleEntryFromPersistentStore(with: id, in: context)
                 if let entry = entry, entry != entryRep {
                     self.update(entry: entry, with: entryRep)
                 } else if entry == nil {
                     _ = Entry(entryRepresentation: entryRep, context: context)
                 }
             }
+            saveToPersistentStore()
         }
     }
     
@@ -168,7 +179,7 @@ class EntryController {
         entry.bodyText = entryRep.bodyText
         entry.mood = entryRep.mood
         entry.timestamp = entryRep.timestamp
-        entry.identifier = entryRep.identifier
+        entry.id = entryRep.id
     }
     
     func saveToPersistentStore() {        
