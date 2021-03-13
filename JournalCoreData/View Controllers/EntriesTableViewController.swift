@@ -129,4 +129,13 @@ class EntriesTableViewController: UITableViewController, NSFetchedResultsControl
         
         return frc
     }()
+    
+    @IBAction func refreshTable(_ sender: UIRefreshControl) {
+        entryController.fetchEntriesFromServer()
+      
+            sender.endRefreshing()
+    
+    }
+    
+    
 }

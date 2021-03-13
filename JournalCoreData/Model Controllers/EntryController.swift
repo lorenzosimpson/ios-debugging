@@ -115,9 +115,22 @@ class EntryController {
             let moc = CoreDataStack.shared.mainContext
             
             do {
-                print(data)
-                let entryReps = try JSONDecoder().decode([String: EntryRepresentation].self, from: data).map({$0.value})
-                self.updateEntries(with: entryReps, in: moc)
+                var entryReps: [EntryRepresentation] = []
+                do {
+                    entryReps = Array(try JSONDecoder().decode([String: EntryRepresentation].self, from: data).values)
+                } catch {
+                    entryReps = []
+                }
+             
+                if entryReps.count == 0 {
+                    self.updateEntries(with: entryReps, with: [], in: moc)
+                } else {
+                let firebaseIDs = entryReps.compactMap({ $0.id })
+                print("FIREBASE IDS: \(firebaseIDs)")
+                    self.updateEntries(with: entryReps, with: firebaseIDs, in: moc)
+                }
+                
+               
             } catch {
                 NSLog("Error decoding JSON data: \(error)")
                 completion(error)
@@ -154,20 +167,33 @@ class EntryController {
         return result
     }
     
-    private func updateEntries(with representations: [EntryRepresentation], in context: NSManagedObjectContext) {
+    private func updateEntries(with representations: [EntryRepresentation], with firebaseIDs: [String], in context: NSManagedObjectContext) {
+        
+        let fetchRequest: NSFetchRequest<Entry> = Entry.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "NOT id IN %@", firebaseIDs)
+        let outdatedEntries = try! context.fetch(fetchRequest)
+        
+        let localFetchRequest: NSFetchRequest<Entry> = Entry.fetchRequest()
+        let localEntries = try! context.fetch(fetchRequest)
+        
+        
         context.performAndWait {
-            for entryRep in representations {
-                print(entryRep)
-                guard let id = entryRep.id else {
-                    fatalError("Firebase entry does not have an id")
-                    continue
+                for entryRep in representations {
+                    guard let id = entryRep.id else {
+                        continue
+                    }
+                    
+                    let entry = self.fetchSingleEntryFromPersistentStore(with: id, in: context)
+                    
+                    if let entry = entry, entry != entryRep {
+                        self.update(entry: entry, with: entryRep)
+                    } else if entry == nil {
+                        _ = Entry(entryRepresentation: entryRep, context: context)
+                    }
                 }
-                
-                let entry = self.fetchSingleEntryFromPersistentStore(with: id, in: context)
-                if let entry = entry, entry != entryRep {
-                    self.update(entry: entry, with: entryRep)
-                } else if entry == nil {
-                    _ = Entry(entryRepresentation: entryRep, context: context)
+            for localEntry in localEntries {
+                if outdatedEntries.contains(localEntry) {
+                    self.delete(entry: localEntry)
                 }
             }
             saveToPersistentStore()
