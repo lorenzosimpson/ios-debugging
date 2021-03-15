@@ -13,14 +13,14 @@ struct EntryRepresentation: Codable {
     var bodyText: String?
     var mood: String?
     var timestamp: Date?
-    var id: String?
+    var identifier: String?
 }
 
 func ==(lhs: EntryRepresentation, rhs: Entry) -> Bool {
     return rhs.title == lhs.title &&
         rhs.bodyText == lhs.bodyText &&
         rhs.mood == lhs.mood &&
-        rhs.id == lhs.id
+        rhs.identifier == lhs.identifier
 }
 
 func ==(lhs: Entry, rhs: EntryRepresentation) -> Bool {
