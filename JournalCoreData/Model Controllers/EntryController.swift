@@ -174,8 +174,6 @@ class EntryController {
         fetchRequest.predicate = NSPredicate(format: "NOT id IN %@", firebaseIDs)
         let outdatedEntries = try! context.fetch(fetchRequest)
         
-        let localFetchRequest: NSFetchRequest<Entry> = Entry.fetchRequest()
-        let localEntries = try! context.fetch(fetchRequest)
         
         context.performAndWait {
 
@@ -192,13 +190,7 @@ class EntryController {
                         _ = Entry(entryRepresentation: entryRep, context: context)
                     }
 
-                // Create or update objects from Firebase
-                let entry = self.fetchSingleEntryFromPersistentStore(with: id, in: context)
-                if let entry = entry, entry != entryRep {
-                    self.update(entry: entry, with: entryRep)
-                } else if entry == nil {
-                    _ = Entry(entryRepresentation: entryRep, context: context)
-                }
+             
             }
             // Delete local objects that have been deleted on other devices
             for localEntry in outdatedEntries {
