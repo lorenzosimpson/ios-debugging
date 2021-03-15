@@ -111,7 +111,7 @@ class EntryController {
                 completion(NSError())
                 return
             }
-
+            
             let moc = CoreDataStack.shared.mainContext
             
             do {
@@ -121,22 +121,23 @@ class EntryController {
                 } catch {
                     entryReps = []
                 }
-             
+                
                 if entryReps.count == 0 {
                     self.updateEntries(with: entryReps, with: [], in: moc)
                 } else {
+
                 let firebaseIDs = entryReps.compactMap({ $0.identifier })
-                print("FIREBASE IDS: \(firebaseIDs)")
+
                     self.updateEntries(with: entryReps, with: firebaseIDs, in: moc)
                 }
                 
-               
+                
             } catch {
                 NSLog("Error decoding JSON data: \(error)")
                 completion(error)
                 return
             }
-           
+            
             moc.perform {
                 do {
                     try moc.save()
@@ -177,6 +178,7 @@ class EntryController {
         let localEntries = try! context.fetch(fetchRequest)
         
         context.performAndWait {
+
                 for entryRep in representations {
                     guard let identifier = entryRep.identifier else {
                         continue
@@ -189,10 +191,19 @@ class EntryController {
                     } else if entry == nil {
                         _ = Entry(entryRepresentation: entryRep, context: context)
                     }
+
+                // Create or update objects from Firebase
+                let entry = self.fetchSingleEntryFromPersistentStore(with: id, in: context)
+                if let entry = entry, entry != entryRep {
+                    self.update(entry: entry, with: entryRep)
+                } else if entry == nil {
+                    _ = Entry(entryRepresentation: entryRep, context: context)
                 }
+            }
+            // Delete local objects that have been deleted on other devices
             for localEntry in outdatedEntries {
-                    self.delete(entry: localEntry)
-                }
+                self.delete(entry: localEntry)
+            }
             saveToPersistentStore()
         }
     }
