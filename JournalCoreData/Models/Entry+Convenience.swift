@@ -15,7 +15,7 @@ extension Entry {
                      bodyText: String,
                      timestamp: Date = Date(),
                      mood: String,
-                     id: String = UUID().uuidString,
+                     identifier: String = UUID().uuidString,
                      context: NSManagedObjectContext = CoreDataStack.shared.mainContext) {
         
         self.init(context: context)
@@ -24,7 +24,7 @@ extension Entry {
         self.bodyText = bodyText
         self.mood = mood
         self.timestamp = timestamp
-        self.id = id
+        self.identifier = identifier
     }
     
     convenience init?(entryRepresentation: EntryRepresentation, context: NSManagedObjectContext = CoreDataStack.shared.mainContext) {
@@ -33,8 +33,8 @@ extension Entry {
             let bodyText = entryRepresentation.bodyText,
             let mood = entryRepresentation.mood,
             let timestamp = entryRepresentation.timestamp,
-            let id = entryRepresentation.id else { return nil }
+            let identifier = entryRepresentation.identifier else { return nil }
         
-        self.init(title: title, bodyText: bodyText, timestamp: timestamp, mood: mood, id: id, context: context)
+        self.init(title: title, bodyText: bodyText, timestamp: timestamp, mood: mood, identifier: identifier, context: context)
     }
 }

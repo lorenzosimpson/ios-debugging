@@ -47,7 +47,7 @@ class EntryController {
     
     private func put(entry: Entry, completion: @escaping ((Error?) -> Void) = { _ in }) {
         
-        let id = entry.id ?? UUID().uuidString
+        let id = entry.identifier ?? UUID().uuidString
         let requestURL = baseURL.appendingPathComponent(id).appendingPathExtension("json")
         var request = URLRequest(url: requestURL)
         request.httpMethod = "PUT"
@@ -73,7 +73,7 @@ class EntryController {
     
     func deleteEntryFromServer(entry: Entry, completion: @escaping ((Error?) -> Void) = { _ in }) {
         
-        guard let id = entry.id else {
+        guard let id = entry.identifier else {
             NSLog("Entry id is nil")
             completion(NSError())
             return
@@ -125,7 +125,7 @@ class EntryController {
                 if entryReps.count == 0 {
                     self.updateEntries(with: entryReps, with: [], in: moc)
                 } else {
-                let firebaseIDs = entryReps.compactMap({ $0.id })
+                let firebaseIDs = entryReps.compactMap({ $0.identifier })
                 print("FIREBASE IDS: \(firebaseIDs)")
                     self.updateEntries(with: entryReps, with: firebaseIDs, in: moc)
                 }
@@ -178,11 +178,11 @@ class EntryController {
         
         context.performAndWait {
                 for entryRep in representations {
-                    guard let id = entryRep.id else {
+                    guard let identifier = entryRep.identifier else {
                         continue
                     }
                     
-                    let entry = self.fetchSingleEntryFromPersistentStore(with: id, in: context)
+                    let entry = self.fetchSingleEntryFromPersistentStore(with: identifier, in: context)
                     
                     if let entry = entry, entry != entryRep {
                         self.update(entry: entry, with: entryRep)
@@ -202,7 +202,7 @@ class EntryController {
         entry.bodyText = entryRep.bodyText
         entry.mood = entryRep.mood
         entry.timestamp = entryRep.timestamp
-        entry.id = entryRep.id
+        entry.identifier = entryRep.identifier
     }
     
     func saveToPersistentStore() {        
